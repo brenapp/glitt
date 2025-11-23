@@ -1,7 +1,6 @@
 use ratatui::{
     crossterm::event::{self, Event, KeyCode, KeyEvent},
     layout::{Constraint, Layout},
-    style::{Color, Modifier, Style},
     text::ToLine,
     widgets::Paragraph,
 };
@@ -70,6 +69,14 @@ impl RebaseEditor {
         }
     }
 
+    pub fn set_current_line(&mut self, line: RebaseTodoLine) {
+        self.todo.lines_mut()[self.line] = line;
+    }
+
+    pub fn get_current_line(&self) -> Option<&RebaseTodoLine> {
+        self.todo.lines().get(self.line)
+    }
+
     pub fn save(&self) -> Result<(), color_eyre::Report> {
         let content = self
             .todo
@@ -99,12 +106,8 @@ impl Editor for RebaseEditor {
         .split(areas[0]);
 
         let lines = self.todo.lines().iter().enumerate().map(|(i, line)| {
-            let color = line.get_color();
             let style = if i == self.line {
-                Style::default()
-                    .bg(color)
-                    .fg(Color::Black)
-                    .add_modifier(Modifier::BOLD)
+                line.get_selected_style()
             } else {
                 line.get_style()
             };
@@ -121,18 +124,96 @@ impl Editor for RebaseEditor {
         terminal.clear()?;
         loop {
             terminal.draw(|frame| self.render(frame))?;
-            match event::read()? {
-                Event::Key(KeyEvent {
-                    code: KeyCode::Down,
-                    ..
-                }) => self.move_cursor_down(),
-                Event::Key(KeyEvent {
-                    code: KeyCode::Up, ..
-                }) => self.move_cursor_up(),
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('q'),
-                    ..
-                }) => {
+            let line = self.get_current_line();
+            let commit = line.and_then(|l| l.get_commit());
+
+            match (event::read()?, commit) {
+                (
+                    Event::Key(KeyEvent {
+                        code: KeyCode::Down,
+                        ..
+                    }),
+                    _,
+                ) => self.move_cursor_down(),
+                (
+                    Event::Key(KeyEvent {
+                        code: KeyCode::Up, ..
+                    }),
+                    _,
+                ) => self.move_cursor_up(),
+
+                (
+                    Event::Key(KeyEvent {
+                        code: KeyCode::Char('p'),
+                        ..
+                    }),
+                    Some(commit),
+                ) => {
+                    self.set_current_line(RebaseTodoLine::Pick {
+                        commit: commit.to_string(),
+                        rest: vec![],
+                    });
+                }
+
+                (
+                    Event::Key(KeyEvent {
+                        code: KeyCode::Char('e'),
+                        ..
+                    }),
+                    Some(commit),
+                ) => {
+                    self.set_current_line(RebaseTodoLine::Edit {
+                        commit: commit.to_string(),
+                        rest: vec![],
+                    });
+                }
+
+                (
+                    Event::Key(KeyEvent {
+                        code: KeyCode::Char('s'),
+                        ..
+                    }),
+                    Some(commit),
+                ) => {
+                    self.set_current_line(RebaseTodoLine::Squash {
+                        commit: commit.to_string(),
+                        rest: vec![],
+                    });
+                }
+
+                (
+                    Event::Key(KeyEvent {
+                        code: KeyCode::Char('f'),
+                        ..
+                    }),
+                    Some(commit),
+                ) => {
+                    self.set_current_line(RebaseTodoLine::Fixup {
+                        commit: commit.to_string(),
+                        rest: vec![],
+                    });
+                }
+
+                (
+                    Event::Key(KeyEvent {
+                        code: KeyCode::Char('d'),
+                        ..
+                    }),
+                    Some(commit),
+                ) => {
+                    self.set_current_line(RebaseTodoLine::Drop {
+                        commit: commit.to_string(),
+                        rest: vec![],
+                    });
+                }
+
+                (
+                    Event::Key(KeyEvent {
+                        code: KeyCode::Char('q'),
+                        ..
+                    }),
+                    _,
+                ) => {
                     self.save()?;
                     terminal.clear()?;
                     return Ok(());

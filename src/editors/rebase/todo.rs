@@ -111,6 +111,38 @@ impl RebaseTodoLine {
             _ => Style::default().fg(color),
         }
     }
+
+    pub fn get_selected_style(&self) -> Style {
+        let color = self.get_color();
+        match self {
+            RebaseTodoLine::Comment { .. } => Style::default()
+                .bg(color)
+                .fg(Color::Black)
+                .add_modifier(Modifier::BOLD)
+                .add_modifier(Modifier::DIM),
+            RebaseTodoLine::Drop { .. } => Style::default()
+                .bg(color)
+                .fg(Color::Black)
+                .add_modifier(Modifier::BOLD)
+                .add_modifier(Modifier::CROSSED_OUT)
+                .add_modifier(Modifier::DIM),
+            _ => Style::default()
+                .bg(color)
+                .fg(Color::Black)
+                .add_modifier(Modifier::BOLD),
+        }
+    }
+
+    pub fn get_commit(&self) -> Option<&str> {
+        match &self {
+            RebaseTodoLine::Pick { commit, .. } => Some(commit),
+            RebaseTodoLine::Edit { commit, .. } => Some(commit),
+            RebaseTodoLine::Squash { commit, .. } => Some(commit),
+            RebaseTodoLine::Fixup { commit, .. } => Some(commit),
+            RebaseTodoLine::Drop { commit, .. } => Some(commit),
+            _ => None,
+        }
+    }
 }
 
 impl Display for RebaseTodoLine {
@@ -169,6 +201,10 @@ impl RebaseTodo {
 
     pub fn lines(&self) -> &Vec<RebaseTodoLine> {
         &self.lines
+    }
+
+    pub fn lines_mut(&mut self) -> &mut Vec<RebaseTodoLine> {
+        &mut self.lines
     }
 }
 #[cfg(test)]
