@@ -1,8 +1,8 @@
 # todo
-pick 129ff48
+drop 129ff48
 pick 71ac844
 pick 28c623a
-pick 3942253
+fixup 3942253
 pick 1ab1c62
 pick 27c1540
 pick 5461a04

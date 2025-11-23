@@ -1,7 +1,7 @@
 use ratatui::{
     crossterm::event::{self, Event, KeyCode, KeyEvent},
     layout::{Constraint, Layout},
-    style::{Color, Modifier},
+    style::{Color, Modifier, Style},
     text::ToLine,
     widgets::Paragraph,
 };
@@ -89,7 +89,7 @@ impl Editor for RebaseEditor {
             Layout::horizontal([Constraint::Max(36), Constraint::Fill(1)]).split(frame.area());
 
         // Render list
-        let todo_line_area = Layout::vertical(
+        let area = Layout::vertical(
             self.todo
                 .lines()
                 .iter()
@@ -97,19 +97,23 @@ impl Editor for RebaseEditor {
                 .collect::<Vec<_>>(),
         )
         .split(areas[0]);
-        for (i, line) in self.todo.lines().iter().enumerate() {
-            let area = todo_line_area[i];
 
+        let lines = self.todo.lines().iter().enumerate().map(|(i, line)| {
+            let color = line.get_color();
             let style = if i == self.line {
-                line.get_style()
-                    .bg(Color::Blue)
+                Style::default()
+                    .bg(color)
+                    .fg(Color::Black)
                     .add_modifier(Modifier::BOLD)
             } else {
                 line.get_style()
             };
 
-            let paragraph = Paragraph::new(line.to_line()).style(style);
-            frame.render_widget(paragraph, area);
+            Paragraph::new(line.to_line()).style(style)
+        });
+
+        for (i, line) in lines.enumerate() {
+            frame.render_widget(line, area[i]);
         }
     }
 
@@ -130,6 +134,7 @@ impl Editor for RebaseEditor {
                     ..
                 }) => {
                     self.save()?;
+                    terminal.clear()?;
                     return Ok(());
                 }
                 _ => {}

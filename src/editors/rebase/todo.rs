@@ -82,14 +82,33 @@ struct RebaseTodoLineParser {
 }
 
 impl RebaseTodoLine {
-    pub fn get_style(&self) -> Style {
+    pub fn get_color(&self) -> Color {
         match self {
-            RebaseTodoLine::Comment { .. } => Style::default()
-                .fg(Color::White)
+            RebaseTodoLine::Comment { .. } => Color::White,
+            RebaseTodoLine::Pick { .. } => Color::White,
+            RebaseTodoLine::Edit { .. } => Color::Blue,
+            RebaseTodoLine::Squash { .. } => Color::Yellow,
+            RebaseTodoLine::Fixup { .. } => Color::LightYellow,
+            RebaseTodoLine::Exec { .. } => Color::Red,
+            RebaseTodoLine::Drop { .. } => Color::White,
+            RebaseTodoLine::Label { .. } => Color::White,
+            RebaseTodoLine::Reset { .. } => Color::White,
+            RebaseTodoLine::Merge { .. } => Color::White,
+            RebaseTodoLine::UpdateRef { .. } => Color::White,
+        }
+    }
+
+    pub fn get_style(&self) -> Style {
+        let color = self.get_color();
+        match self {
+            RebaseTodoLine::Comment { .. } => {
+                Style::default().fg(color).add_modifier(Modifier::DIM)
+            }
+            RebaseTodoLine::Drop { .. } => Style::default()
+                .fg(color)
+                .add_modifier(Modifier::CROSSED_OUT)
                 .add_modifier(Modifier::DIM),
-            _ => Style::default()
-                .fg(Color::White)
-                .remove_modifier(Modifier::DIM),
+            _ => Style::default().fg(color),
         }
     }
 }
