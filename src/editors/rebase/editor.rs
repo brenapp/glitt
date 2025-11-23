@@ -4,7 +4,7 @@ use ratatui::{
     layout::{Constraint, Layout, Rect},
     style::{Modifier, Style},
     text::ToLine,
-    widgets::Paragraph,
+    widgets::{Block, Paragraph},
 };
 
 use crate::editors::{
@@ -133,6 +133,27 @@ impl RebaseEditor {
         }
     }
 
+    pub fn render_commit_info(&self, frame: &mut ratatui::Frame, area: Rect) {
+        let line = self.get_current_line();
+        let commit = line.and_then(|l| l.get_commit());
+
+        let block = Block::default()
+            .title("Commit Info")
+            .borders(ratatui::widgets::Borders::ALL);
+
+        let info = if let Some(commit) = commit {
+            format!("Commit: {}", commit)
+        } else {
+            "No commit selected".to_string()
+        };
+
+        let paragraph = Paragraph::new(info)
+            .block(block)
+            .style(Style::default().add_modifier(Modifier::BOLD));
+
+        frame.render_widget(paragraph, area);
+    }
+
     pub fn render_instructions(&self, frame: &mut ratatui::Frame, area: Rect) {
         let instructions = Paragraph::new(
             "↑/↓: Move  p: pick  e: edit  s: squash  f: fixup  d: drop  q: quit and save  a: abort",
@@ -152,7 +173,9 @@ impl Editor for RebaseEditor {
 
         let editor_area =
             Layout::horizontal([Constraint::Max(36), Constraint::Fill(1)]).split(main_area[1]);
+
         self.render_todo_list(frame, editor_area[0]);
+        self.render_commit_info(frame, editor_area[1]);
     }
 
     fn run(&mut self, mut terminal: ratatui::DefaultTerminal) -> color_eyre::Result<()> {
