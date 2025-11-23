@@ -1,6 +1,8 @@
+use git2::Repository;
 use ratatui::{
     crossterm::event::{self, Event, KeyCode, KeyEvent},
-    layout::{Constraint, Layout},
+    layout::{Constraint, Layout, Rect},
+    style::{Modifier, Style},
     text::ToLine,
     widgets::Paragraph,
 };
@@ -15,6 +17,7 @@ pub struct RebaseEditor {
     path: PathBuf,
     line: usize,
     todo: RebaseTodo,
+    repo: Repository,
 }
 
 impl RebaseEditor {
@@ -28,7 +31,17 @@ impl RebaseEditor {
             .position(|line| !matches!(line, RebaseTodoLine::Comment { .. }))
             .unwrap_or(0);
 
-        Ok(Self { path, todo, line })
+        let repo = Repository::discover(
+            path.parent()
+                .ok_or_else(|| color_eyre::eyre::eyre!("Invalid path"))?,
+        )?;
+
+        Ok(Self {
+            path,
+            todo,
+            line,
+            repo,
+        })
     }
 
     pub fn move_cursor_down(&mut self) {
@@ -88,14 +101,8 @@ impl RebaseEditor {
         std::fs::write(&self.path, content)?;
         Ok(())
     }
-}
 
-impl Editor for RebaseEditor {
-    fn render(&mut self, frame: &mut ratatui::Frame) {
-        let areas =
-            Layout::horizontal([Constraint::Max(36), Constraint::Fill(1)]).split(frame.area());
-
-        // Render list
+    pub fn render_todo_list(&self, frame: &mut ratatui::Frame, area: Rect) {
         let area = Layout::vertical(
             self.todo
                 .lines()
@@ -103,7 +110,7 @@ impl Editor for RebaseEditor {
                 .map(|_| Constraint::Length(1))
                 .collect::<Vec<_>>(),
         )
-        .split(areas[0]);
+        .split(area);
 
         let lines = self.todo.lines().iter().enumerate().map(|(i, line)| {
             let style = if i == self.line {
@@ -118,6 +125,28 @@ impl Editor for RebaseEditor {
         for (i, line) in lines.enumerate() {
             frame.render_widget(line, area[i]);
         }
+    }
+
+    pub fn render_instructions(&self, frame: &mut ratatui::Frame, area: Rect) {
+        let instructions = Paragraph::new(
+            "↑/↓: Move  p: pick  e: edit  s: squash  f: fixup  d: drop  q: quit and save  a: abort",
+        )
+        .style(Style::default().add_modifier(Modifier::BOLD));
+
+        frame.render_widget(instructions, area);
+    }
+}
+
+impl Editor for RebaseEditor {
+    fn render(&mut self, frame: &mut ratatui::Frame) {
+        let main_area =
+            Layout::vertical([Constraint::Length(1), Constraint::Min(1)]).split(frame.area());
+
+        self.render_instructions(frame, main_area[0]);
+
+        let editor_area =
+            Layout::horizontal([Constraint::Max(36), Constraint::Fill(1)]).split(main_area[1]);
+        self.render_todo_list(frame, editor_area[0]);
     }
 
     fn run(&mut self, mut terminal: ratatui::DefaultTerminal) -> color_eyre::Result<()> {
@@ -218,6 +247,22 @@ impl Editor for RebaseEditor {
                     terminal.clear()?;
                     return Ok(());
                 }
+
+                (
+                    Event::Key(KeyEvent {
+                        code: KeyCode::Char('a'),
+                        ..
+                    }),
+                    _,
+                ) => {
+                    terminal.clear()?;
+
+                    let mut rebase = self.repo.open_rebase(None)?;
+                    rebase.abort()?;
+
+                    return Ok(());
+                }
+
                 _ => {}
             };
         }
