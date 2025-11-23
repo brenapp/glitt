@@ -17,6 +17,7 @@ pub struct RebaseEditor {
     path: PathBuf,
     line: usize,
     todo: RebaseTodo,
+    #[allow(dead_code)]
     repo: Repository,
 }
 
@@ -99,6 +100,11 @@ impl RebaseEditor {
             .collect::<Vec<_>>()
             .join("\n");
         std::fs::write(&self.path, content)?;
+        Ok(())
+    }
+
+    pub fn save_empty(&self) -> Result<(), color_eyre::Report> {
+        std::fs::write(&self.path, "")?;
         Ok(())
     }
 
@@ -256,10 +262,7 @@ impl Editor for RebaseEditor {
                     _,
                 ) => {
                     terminal.clear()?;
-
-                    let mut rebase = self.repo.open_rebase(None)?;
-                    rebase.abort()?;
-
+                    self.save_empty()?;
                     return Ok(());
                 }
 
