@@ -4,7 +4,7 @@ use ratatui::{
     layout::{Constraint, Layout, Rect},
     style::{Modifier, Style},
     text::ToLine,
-    widgets::{Block, Paragraph},
+    widgets::{Block, Borders, Paragraph},
 };
 
 use crate::editors::{
@@ -109,43 +109,40 @@ impl RebaseEditor {
     }
 
     pub fn render_todo_list(&self, frame: &mut ratatui::Frame, area: Rect) {
-        let area = Layout::vertical(
-            self.todo
-                .lines()
-                .iter()
-                .map(|_| Constraint::Length(1))
-                .collect::<Vec<_>>(),
-        )
-        .split(area);
+        let block = Block::default().title("Todo").borders(Borders::ALL);
 
-        let lines = self.todo.lines().iter().enumerate().map(|(i, line)| {
-            let style = if i == self.line {
-                line.get_selected_style()
-            } else {
-                line.get_style()
-            };
+        let lines: Vec<_> = self
+            .todo
+            .lines()
+            .iter()
+            .enumerate()
+            .map(|(i, line)| {
+                let style = if i == self.line {
+                    line.get_selected_style()
+                } else {
+                    line.get_style()
+                };
 
-            Paragraph::new(line.to_line()).style(style)
-        });
+                line.to_line().style(style)
+            })
+            .collect();
 
-        for (i, line) in lines.enumerate() {
-            frame.render_widget(line, area[i]);
-        }
+        let paragraph = Paragraph::new(lines).block(block);
+        frame.render_widget(paragraph, area);
     }
 
     pub fn render_commit_info(&self, frame: &mut ratatui::Frame, area: Rect) {
         let line = self.get_current_line();
         let commit = line.and_then(|l| l.get_commit());
 
-        let block = Block::default()
-            .title("Commit Info")
-            .borders(ratatui::widgets::Borders::ALL);
-
-        let info = if let Some(commit) = commit {
-            format!("Commit: {}", commit)
-        } else {
-            "No commit selected".to_string()
+        let commit = match commit {
+            Some(commit) => commit,
+            None => return,
         };
+
+        let block = Block::default().title("Commit").borders(Borders::ALL);
+
+        let info = format!("Hash: {}", commit);
 
         let paragraph = Paragraph::new(info)
             .block(block)
