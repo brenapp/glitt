@@ -1,9 +1,9 @@
-use git2::Repository;
+use git2::{Commit, Repository};
 use ratatui::{
     crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers},
     layout::{Constraint, Layout, Rect},
     style::{Modifier, Style},
-    text::ToLine,
+    text::Line,
     widgets::{Block, Borders, Paragraph},
 };
 
@@ -133,6 +133,15 @@ impl RebaseEditor {
         self.todo.lines().get(self.line)
     }
 
+    pub fn get_commit_for_line(&self, line: &RebaseTodoLine) -> Option<Commit<'_>> {
+        let sha = line.get_commit()?;
+
+        self.repo
+            .revparse_single(sha)
+            .ok()
+            .and_then(|r| r.into_commit().ok())
+    }
+
     pub fn save(&self) -> Result<(), color_eyre::Report> {
         let content = self
             .todo
@@ -165,7 +174,14 @@ impl RebaseEditor {
                     line.get_style()
                 };
 
-                line.to_line().style(style)
+                let summary = if let Some(commit) = self.get_commit_for_line(line) {
+                    commit.summary().unwrap_or("").to_string()
+                } else {
+                    String::new()
+                };
+
+                let content = format!("{} {}", line, summary);
+                Line::from(content).style(style)
             })
             .collect();
 
@@ -177,26 +193,12 @@ impl RebaseEditor {
         let timestamp = chrono::DateTime::from_timestamp(commit.time().seconds(), 0)
             .unwrap_or_else(|| chrono::DateTime::from_timestamp(0, 0).unwrap());
 
-        let diff = self
-            .repo
-            .diff_tree_to_tree(None, commit.tree().ok().as_ref(), None)
-            .ok();
-
-        let deltas: Vec<String> = match diff {
-            Some(d) => d
-                .deltas()
-                .map(|delta| format!("{:?}", delta.nfiles()))
-                .collect(),
-            None => vec!["No diff available".into()],
-        };
-
         let line = format!(
-            "Author: {} <{}>\nDate:   {}\n\n{}\n{}",
+            "Author: {} <{}>\nDate:   {}\n\n{}\n",
             commit.author().name().unwrap_or("Unknown"),
             commit.author().email().unwrap_or("unknown"),
             timestamp,
             commit.message().unwrap_or("No commit message"),
-            deltas.join("\n"),
         );
 
         Paragraph::new(line).style(Style::default())
@@ -204,13 +206,7 @@ impl RebaseEditor {
 
     pub fn render_commit_info(&self, frame: &mut ratatui::Frame, area: Rect) {
         let line = self.get_current_line();
-        let sha = line.and_then(|l| l.get_commit());
-        let commit = sha.and_then(|sha| {
-            self.repo
-                .revparse_single(sha)
-                .ok()
-                .and_then(|r| r.into_commit().ok())
-        });
+        let commit = line.and_then(|l| self.get_commit_for_line(l));
 
         let commit = match commit {
             Some(c) => c,

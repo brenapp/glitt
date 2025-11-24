@@ -149,29 +149,29 @@ impl Display for RebaseTodoLine {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             RebaseTodoLine::Comment { message } => write!(f, "{}", message),
-            RebaseTodoLine::Pick { commit, rest } => {
-                write!(f, "pick {} {}", commit, rest.join(" "))
+            RebaseTodoLine::Pick { commit, .. } => {
+                write!(f, "pick {}", commit)
             }
-            RebaseTodoLine::Edit { commit, rest } => {
-                write!(f, "edit {} {}", commit, rest.join(" "))
+            RebaseTodoLine::Edit { commit, .. } => {
+                write!(f, "edit {}", commit)
             }
-            RebaseTodoLine::Squash { commit, rest } => {
-                write!(f, "squash {} {}", commit, rest.join(" "))
+            RebaseTodoLine::Squash { commit, .. } => {
+                write!(f, "squash {}", commit)
             }
-            RebaseTodoLine::Fixup { commit, rest } => {
-                write!(f, "fixup {} {}", commit, rest.join(" "))
+            RebaseTodoLine::Fixup { commit, .. } => {
+                write!(f, "fixup {}", commit)
             }
             RebaseTodoLine::Exec { command, .. } => {
                 write!(f, "exec {}", command.join(" "))
             }
-            RebaseTodoLine::Drop { commit, rest } => {
-                write!(f, "drop {} {}", commit, rest.join(" "))
+            RebaseTodoLine::Drop { commit, .. } => {
+                write!(f, "drop {}", commit)
             }
-            RebaseTodoLine::Label { label, rest } => {
-                write!(f, "label {} {}", label, rest.join(" "))
+            RebaseTodoLine::Label { label, .. } => {
+                write!(f, "label {}", label)
             }
-            RebaseTodoLine::Reset { label, rest } => {
-                write!(f, "reset {} {}", label, rest.join(" "))
+            RebaseTodoLine::Reset { label, .. } => {
+                write!(f, "reset {}", label)
             }
             RebaseTodoLine::Merge { commit, label } => {
                 if let Some(c) = commit {
