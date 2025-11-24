@@ -15,6 +15,10 @@ pub enum Commands {
 struct Cli {
     /// Path to edit
     path: std::path::PathBuf,
+
+    /// The fallback editor to use.
+    #[clap(long, default_value = "vim")]
+    fallback: String,
 }
 
 fn main() -> Result<()> {
@@ -32,16 +36,19 @@ fn main() -> Result<()> {
         let mut editor = RebaseEditor::new(path)?;
         editor.run(terminal)
     } else {
-        Command::new("vim").arg(&path).status().map(|status| {
-            if status.success() {
-                Ok(())
-            } else {
-                Err(color_eyre::eyre::eyre!(
-                    "Vim exited with non-zero status: {}",
-                    status
-                ))
-            }
-        })?
+        Command::new(args.fallback)
+            .arg(&path)
+            .status()
+            .map(|status| {
+                if status.success() {
+                    Ok(())
+                } else {
+                    Err(color_eyre::eyre::eyre!(
+                        "Vim exited with non-zero status: {}",
+                        status
+                    ))
+                }
+            })?
     };
 
     ratatui::restore();
