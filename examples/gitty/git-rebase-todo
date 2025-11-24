@@ -1,0 +1,16 @@
+pick 4ded6fa Display commit info
+pick 0427199 move to examples
+pick 2a2bb91 Allow configurable vim
+pick ce6a4bb Allow shifting of commits
+pick decab33 Fallback to vim for non-rebase use cases
+pick aa32623 Display commit info
+pick a27b85b Include rest in display
+pick 631b6b9 Add block to show commit info
+pick 8cff894 "abort" by saving empty
+pick 0de480b Add ratatui restore
+pick fe153d5 Add instructions + abort mechanism
+pick d2abe26 Centralize style in todo line
+pick 7a15a59 Add styling for drop/squash/fixup
+pick c7936b6 
+pick 43d0e44 rebase todo editor init
+pick 6a5ff9d init
