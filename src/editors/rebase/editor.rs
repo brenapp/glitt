@@ -177,13 +177,26 @@ impl RebaseEditor {
         let timestamp = chrono::DateTime::from_timestamp(commit.time().seconds(), 0)
             .unwrap_or_else(|| chrono::DateTime::from_timestamp(0, 0).unwrap());
 
+        let diff = self
+            .repo
+            .diff_tree_to_tree(None, commit.tree().ok().as_ref(), None)
+            .ok();
+
+        let deltas: Vec<String> = match diff {
+            Some(d) => d
+                .deltas()
+                .map(|delta| format!("{:?}", delta.nfiles()))
+                .collect(),
+            None => vec!["No diff available".into()],
+        };
+
         let line = format!(
             "Author: {} <{}>\nDate:   {}\n\n{}\n{}",
             commit.author().name().unwrap_or("Unknown"),
             commit.author().email().unwrap_or("unknown"),
             timestamp,
             commit.message().unwrap_or("No commit message"),
-            commit.id()
+            deltas.join("\n"),
         );
 
         Paragraph::new(line).style(Style::default())
