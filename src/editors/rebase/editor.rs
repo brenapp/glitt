@@ -1,6 +1,6 @@
 use git2::Repository;
 use ratatui::{
-    crossterm::event::{self, Event, KeyCode, KeyEvent},
+    crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers},
     layout::{Constraint, Layout, Rect},
     style::{Modifier, Style},
     text::ToLine,
@@ -77,6 +77,48 @@ impl RebaseEditor {
                 idx -= 1;
             }
             if !matches!(lines[idx], RebaseTodoLine::Comment { .. }) {
+                self.line = idx;
+                return;
+            }
+        }
+    }
+
+    pub fn swap_down(&mut self) {
+        let lines = self.todo.lines();
+        let len = lines.len();
+        if len == 0 {
+            return;
+        }
+
+        let current_line = self.line;
+        let mut idx = current_line;
+        for _ in 0..len {
+            idx = (idx + 1) % len;
+            if !matches!(lines[idx], RebaseTodoLine::Comment { .. }) {
+                self.todo.lines_mut().swap(current_line, idx);
+                self.line = idx;
+                return;
+            }
+        }
+    }
+
+    pub fn swap_up(&mut self) {
+        let lines = self.todo.lines();
+        let len = lines.len();
+        if len == 0 {
+            return;
+        }
+
+        let current_line = self.line;
+        let mut idx = current_line;
+        for _ in 0..len {
+            if idx == 0 {
+                idx = len - 1;
+            } else {
+                idx -= 1;
+            }
+            if !matches!(lines[idx], RebaseTodoLine::Comment { .. }) {
+                self.todo.lines_mut().swap(current_line, idx);
                 self.line = idx;
                 return;
             }
@@ -190,17 +232,33 @@ impl Editor for RebaseEditor {
                 (
                     Event::Key(KeyEvent {
                         code: KeyCode::Down,
+                        modifiers: KeyModifiers::SHIFT,
+                        ..
+                    }),
+                    _,
+                ) => self.swap_down(),
+                (
+                    Event::Key(KeyEvent {
+                        code: KeyCode::Down,
                         ..
                     }),
                     _,
                 ) => self.move_cursor_down(),
                 (
                     Event::Key(KeyEvent {
+                        code: KeyCode::Up,
+                        modifiers: KeyModifiers::SHIFT,
+                        ..
+                    }),
+                    _,
+                ) => self.swap_up(),
+
+                (
+                    Event::Key(KeyEvent {
                         code: KeyCode::Up, ..
                     }),
                     _,
                 ) => self.move_cursor_up(),
-
                 (
                     Event::Key(KeyEvent {
                         code: KeyCode::Char('p'),

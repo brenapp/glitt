@@ -1,15 +1,14 @@
-# todo
-drop 129ff48
-pick 71ac844
-pick 28c623a
-fixup 3942253
-pick 1ab1c62
-pick 27c1540
-pick 5461a04
-pick c3cdb3e
-pick 3ad2143
-pick 3546ac7
-pick 52b3f9a
+drop 129ff48 Commit A
+pick 71ac844 Commit B
+pick 28c623a Commit C
+fixup 3942253 Commit D
+pick 1ab1c62 Commit E
+pick 27c1540 Commit F
+pick 5461a04 Commit G
+pick c3cdb3e Commit H
+pick 3ad2143 Commit I
+pick 3546ac7 Commit J
+pick 52b3f9a Commit K
 
 # Rebase a145830..52b3f9a onto a145830 (11 commands)
 #
