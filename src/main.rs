@@ -1,8 +1,10 @@
+use std::process::Command;
+
 use clap::Parser;
 use color_eyre::Result;
 mod editors;
 
-use crate::editors::Editor;
+use crate::editors::{Editor, rebase::RebaseEditor};
 
 #[derive(Clone, clap::ValueEnum)]
 pub enum Commands {
@@ -11,10 +13,7 @@ pub enum Commands {
 
 #[derive(clap::Parser)]
 struct Cli {
-    #[arg(short, long, global = true)]
-    command: Option<Commands>,
-
-    /// Path to the rebase todo file
+    /// Path to edit
     path: std::path::PathBuf,
 }
 
@@ -29,10 +28,21 @@ fn main() -> Result<()> {
         cwd.join(args.path).canonicalize()?
     };
 
-    let mut editor: Box<dyn Editor> = match args.command {
-        Some(Commands::Rebase) | None => Box::new(editors::rebase::RebaseEditor::new(path)?),
+    let result = if RebaseEditor::should_run(&path) {
+        let mut editor = RebaseEditor::new(path)?;
+        editor.run(terminal)
+    } else {
+        Command::new("vim").arg(&path).status().map(|status| {
+            if status.success() {
+                Ok(())
+            } else {
+                Err(color_eyre::eyre::eyre!(
+                    "Vim exited with non-zero status: {}",
+                    status
+                ))
+            }
+        })?
     };
-    let result = editor.run(terminal);
 
     ratatui::restore();
     result

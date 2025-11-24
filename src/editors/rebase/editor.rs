@@ -11,7 +11,7 @@ use crate::editors::{
     Editor,
     rebase::todo::{RebaseTodo, RebaseTodoLine},
 };
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 pub struct RebaseEditor {
     path: PathBuf,
@@ -162,6 +162,10 @@ impl RebaseEditor {
 }
 
 impl Editor for RebaseEditor {
+    fn should_run(path: &Path) -> bool {
+        path.file_stem().is_some_and(|f| f.eq("git-rebase-todo"))
+    }
+
     fn render(&mut self, frame: &mut ratatui::Frame) {
         let main_area =
             Layout::vertical([Constraint::Length(1), Constraint::Min(1)]).split(frame.area());
