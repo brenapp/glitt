@@ -420,17 +420,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e629b9b98ef3dd8afe6ca2bd0f89306cec16d43d907889945bc5d6687f2f13c7"
 
 [[package]]
-name = "git-editor"
-version = "0.1.0"
-dependencies = [
- "clap",
- "color-eyre",
- "crossterm 0.29.0",
- "git2",
- "ratatui",
-]
-
-[[package]]
 name = "git2"
 version = "0.20.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -443,6 +432,17 @@ dependencies = [
  "openssl-probe",
  "openssl-sys",
  "url",
+]
+
+[[package]]
+name = "gitty"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "color-eyre",
+ "crossterm 0.29.0",
+ "git2",
+ "ratatui",
 ]
 
 [[package]]
