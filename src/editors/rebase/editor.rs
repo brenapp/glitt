@@ -173,22 +173,44 @@ impl RebaseEditor {
         frame.render_widget(paragraph, area);
     }
 
+    pub fn format_commit(&self, commit: &git2::Commit) -> Paragraph<'_> {
+        let timestamp = chrono::DateTime::from_timestamp(commit.time().seconds(), 0)
+            .unwrap_or_else(|| chrono::DateTime::from_timestamp(0, 0).unwrap());
+
+        let line = format!(
+            "Author: {} <{}>\nDate:   {}\n\n{}\n{}",
+            commit.author().name().unwrap_or("Unknown"),
+            commit.author().email().unwrap_or("unknown"),
+            timestamp,
+            commit.message().unwrap_or("No commit message"),
+            commit.id()
+        );
+
+        Paragraph::new(line).style(Style::default())
+    }
+
     pub fn render_commit_info(&self, frame: &mut ratatui::Frame, area: Rect) {
         let line = self.get_current_line();
-        let commit = line.and_then(|l| l.get_commit());
+        let sha = line.and_then(|l| l.get_commit());
+        let commit = sha.and_then(|sha| {
+            self.repo
+                .revparse_single(sha)
+                .ok()
+                .and_then(|r| r.into_commit().ok())
+        });
 
         let commit = match commit {
-            Some(commit) => commit,
-            None => return,
+            Some(c) => c,
+            None => {
+                let block = Block::default().title("Commit").borders(Borders::ALL);
+                let paragraph = Paragraph::new("No commit selected").block(block);
+                frame.render_widget(paragraph, area);
+                return;
+            }
         };
 
         let block = Block::default().title("Commit").borders(Borders::ALL);
-
-        let info = format!("Hash: {}", commit);
-
-        let paragraph = Paragraph::new(info)
-            .block(block)
-            .style(Style::default().add_modifier(Modifier::BOLD));
+        let paragraph = self.format_commit(&commit).block(block);
 
         frame.render_widget(paragraph, area);
     }
