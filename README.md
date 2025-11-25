@@ -4,5 +4,5 @@ GiTTY is a small editor for standard git workflows that makes it easier to use G
 
 ```
 [core]
-    editor = "./target/debug/gitty --fallback vim $@"
+    editor = "./target/debug/glitt --fallback vim $@"
 ```
