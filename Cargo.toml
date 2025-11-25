@@ -2,6 +2,10 @@
 name = "glitt"
 version = "0.1.0"
 edition = "2024"
+repository = "https://github.com/brenapp/glitt/tree/main"
+authors = ["Brendan McGuire"]
+description = "A terminal UI for some git operations."
+license = "MIT"
 
 [dependencies]
 chrono = "0.4.42"
