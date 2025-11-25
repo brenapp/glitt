@@ -1,2 +1,2 @@
 [core]
-    editor = "./target/debug/gitty $@"
+    editor = "./target/debug/glitt $@"
