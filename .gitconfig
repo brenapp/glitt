@@ -1,2 +1,2 @@
 [core]
-    editor = "./target/debug/glitt $@"
+    editor = "./target/debug/glitt --fallback vim $@"
