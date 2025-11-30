@@ -148,6 +148,18 @@ impl RebaseTodoLine {
             RebaseTodoLine::Squash { commit, .. } => Some(commit),
             RebaseTodoLine::Fixup { commit, .. } => Some(commit),
             RebaseTodoLine::Drop { commit, .. } => Some(commit),
+            RebaseTodoLine::Reword { commit, .. } => Some(commit),
+            _ => None,
+        }
+    }
+
+    pub fn get_rest(&self) -> Option<&[String]> {
+        match &self {
+            RebaseTodoLine::Pick { rest, .. } => Some(rest),
+            RebaseTodoLine::Edit { rest, .. } => Some(rest),
+            RebaseTodoLine::Squash { rest, .. } => Some(rest),
+            RebaseTodoLine::Fixup { rest, .. } => Some(rest),
+            RebaseTodoLine::Drop { rest, .. } => Some(rest),
             _ => None,
         }
     }

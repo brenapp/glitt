@@ -306,9 +306,10 @@ impl Editor for RebaseEditor {
                     }),
                     Some(commit),
                 ) => {
+                    let rest = line.and_then(|l| l.get_rest()).unwrap_or_default().to_vec();
                     self.set_current_line(RebaseTodoLine::Pick {
                         commit: commit.to_string(),
-                        rest: vec![],
+                        rest: rest,
                     });
                 }
 
@@ -319,9 +320,10 @@ impl Editor for RebaseEditor {
                     }),
                     Some(commit),
                 ) => {
+                    let rest = line.and_then(|l| l.get_rest()).unwrap_or_default().to_vec();
                     self.set_current_line(RebaseTodoLine::Edit {
                         commit: commit.to_string(),
-                        rest: vec![],
+                        rest,
                     });
                 }
 
@@ -332,9 +334,10 @@ impl Editor for RebaseEditor {
                     }),
                     Some(commit),
                 ) => {
+                    let rest = line.and_then(|l| l.get_rest()).unwrap_or_default().to_vec();
                     self.set_current_line(RebaseTodoLine::Reword {
                         commit: commit.to_string(),
-                        rest: vec![],
+                        rest,
                     });
                 }
 
@@ -345,9 +348,10 @@ impl Editor for RebaseEditor {
                     }),
                     Some(commit),
                 ) => {
+                    let rest = line.and_then(|l| l.get_rest()).unwrap_or_default().to_vec();
                     self.set_current_line(RebaseTodoLine::Squash {
                         commit: commit.to_string(),
-                        rest: vec![],
+                        rest,
                     });
                 }
 
@@ -358,9 +362,10 @@ impl Editor for RebaseEditor {
                     }),
                     Some(commit),
                 ) => {
+                    let rest = line.and_then(|l| l.get_rest()).unwrap_or_default().to_vec();
                     self.set_current_line(RebaseTodoLine::Fixup {
                         commit: commit.to_string(),
-                        rest: vec![],
+                        rest,
                     });
                 }
 
@@ -371,9 +376,10 @@ impl Editor for RebaseEditor {
                     }),
                     Some(commit),
                 ) => {
+                    let rest = line.and_then(|l| l.get_rest()).unwrap_or_default().to_vec();
                     self.set_current_line(RebaseTodoLine::Drop {
                         commit: commit.to_string(),
-                        rest: vec![],
+                        rest,
                     });
                 }
 
