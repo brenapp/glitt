@@ -157,29 +157,29 @@ impl Display for RebaseTodoLine {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             RebaseTodoLine::Comment { message } => write!(f, "{}", message),
-            RebaseTodoLine::Pick { commit, .. } => {
-                write!(f, "pick {}", commit)
+            RebaseTodoLine::Pick { commit, rest } => {
+                write!(f, "pick {} {}", commit, rest.join(" "))
             }
-            RebaseTodoLine::Edit { commit, .. } => {
-                write!(f, "edit {}", commit)
+            RebaseTodoLine::Edit { commit, rest } => {
+                write!(f, "edit {} {}", commit, rest.join(" "))
             }
-            RebaseTodoLine::Squash { commit, .. } => {
-                write!(f, "squash {}", commit)
+            RebaseTodoLine::Squash { commit, rest } => {
+                write!(f, "squash {} {}", commit, rest.join(" "))
             }
-            RebaseTodoLine::Fixup { commit, .. } => {
-                write!(f, "fixup {}", commit)
+            RebaseTodoLine::Fixup { commit, rest } => {
+                write!(f, "fixup {} {}", commit, rest.join(" "))
             }
-            RebaseTodoLine::Exec { command, .. } => {
+            RebaseTodoLine::Exec { command } => {
                 write!(f, "exec {}", command.join(" "))
             }
-            RebaseTodoLine::Drop { commit, .. } => {
-                write!(f, "drop {}", commit)
+            RebaseTodoLine::Drop { commit, rest } => {
+                write!(f, "drop {} {}", commit, rest.join(" "))
             }
-            RebaseTodoLine::Label { label, .. } => {
-                write!(f, "label {}", label)
+            RebaseTodoLine::Label { label, rest } => {
+                write!(f, "label {} {}", label, rest.join(" "))
             }
-            RebaseTodoLine::Reset { label, .. } => {
-                write!(f, "reset {}", label)
+            RebaseTodoLine::Reset { label, rest } => {
+                write!(f, "reset {} {}", label, rest.join(" "))
             }
             RebaseTodoLine::Merge { commit, label } => {
                 if let Some(c) = commit {
@@ -189,7 +189,9 @@ impl Display for RebaseTodoLine {
                 }
             }
             RebaseTodoLine::UpdateRef { refname } => write!(f, "update-ref {}", refname),
-            RebaseTodoLine::Reword { commit, .. } => write!(f, "reword {}", commit),
+            RebaseTodoLine::Reword { commit, rest } => {
+                write!(f, "reword {} {}", commit, rest.join(" "))
+            }
         }
     }
 }
