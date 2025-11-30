@@ -29,6 +29,13 @@ pub enum RebaseTodoLine {
         rest: Vec<String>,
     },
 
+    #[command(alias = "r")]
+    Reword {
+        commit: String,
+        #[arg(num_args = 1.., trailing_var_arg = true)]
+        rest: Vec<String>,
+    },
+
     #[command(alias = "f")]
     Fixup {
         commit: String,
@@ -56,7 +63,7 @@ pub enum RebaseTodoLine {
         rest: Vec<String>,
     },
 
-    #[command(alias = "r")]
+    #[command(alias = "t")]
     Reset {
         label: String,
         #[arg(num_args = 1.., trailing_var_arg = true)]
@@ -87,6 +94,7 @@ impl RebaseTodoLine {
             RebaseTodoLine::Comment { .. } => Color::White,
             RebaseTodoLine::Pick { .. } => Color::White,
             RebaseTodoLine::Edit { .. } => Color::Blue,
+            RebaseTodoLine::Reword { .. } => Color::Magenta,
             RebaseTodoLine::Squash { .. } => Color::Yellow,
             RebaseTodoLine::Fixup { .. } => Color::LightYellow,
             RebaseTodoLine::Exec { .. } => Color::Red,
@@ -181,6 +189,7 @@ impl Display for RebaseTodoLine {
                 }
             }
             RebaseTodoLine::UpdateRef { refname } => write!(f, "update-ref {}", refname),
+            RebaseTodoLine::Reword { commit, .. } => write!(f, "reword {}", commit),
         }
     }
 }

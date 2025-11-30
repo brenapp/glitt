@@ -2,7 +2,7 @@ use git2::{Commit, Repository};
 use ratatui::{
     crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers},
     layout::{Constraint, Layout, Rect},
-    style::{Modifier, Style},
+    style::{Style, Stylize},
     text::Line,
     widgets::{Block, Borders, Paragraph},
 };
@@ -225,10 +225,19 @@ impl RebaseEditor {
     }
 
     pub fn render_instructions(&self, frame: &mut ratatui::Frame, area: Rect) {
-        let instructions = Paragraph::new(
-            "↑/↓: Move  p: pick  e: edit  s: squash  f: fixup  d: drop  q: quit and save  a: abort",
-        )
-        .style(Style::default().add_modifier(Modifier::BOLD));
+        let instructions = Paragraph::new(format!(
+            "{} Move  {} pick  {} edit  {} reword {} squash  {} fixup  {} drop  {} quit and save  {} abort",
+            "↑/↓".bold(),
+            "p".bold(),
+            "e".bold(),
+            "r".bold(),
+            "s".bold(),
+            "f".bold(),
+            "d".bold(),
+            "q".bold(),
+            "a".bold()
+        ))
+        .style(Style::default());
 
         frame.render_widget(instructions, area);
     }
@@ -311,6 +320,19 @@ impl Editor for RebaseEditor {
                     Some(commit),
                 ) => {
                     self.set_current_line(RebaseTodoLine::Edit {
+                        commit: commit.to_string(),
+                        rest: vec![],
+                    });
+                }
+
+                (
+                    Event::Key(KeyEvent {
+                        code: KeyCode::Char('r'),
+                        ..
+                    }),
+                    Some(commit),
+                ) => {
+                    self.set_current_line(RebaseTodoLine::Reword {
                         commit: commit.to_string(),
                         rest: vec![],
                     });
