@@ -1,3 +1,7 @@
+use crate::editors::{
+    Editor,
+    rebase::todo::{RebaseTodo, RebaseTodoLine},
+};
 use git2::{Commit, Repository};
 use ratatui::{
     crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers},
@@ -5,11 +9,6 @@ use ratatui::{
     style::{Style, Stylize},
     text::Line,
     widgets::{Block, Borders, Paragraph},
-};
-
-use crate::editors::{
-    Editor,
-    rebase::todo::{RebaseTodo, RebaseTodoLine},
 };
 use std::path::{Path, PathBuf};
 
@@ -173,14 +172,7 @@ impl RebaseEditor {
                     line.get_style()
                 };
 
-                let summary = if let Some(commit) = self.get_commit_for_line(line) {
-                    commit.summary().unwrap_or("").to_string()
-                } else {
-                    String::new()
-                };
-
-                let content = format!("{} {}", line, summary);
-                Line::from(content).style(style)
+                Line::from(line.to_string()).style(style)
             })
             .collect();
 

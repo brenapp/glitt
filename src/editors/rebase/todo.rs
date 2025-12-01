@@ -163,46 +163,64 @@ impl RebaseTodoLine {
             _ => None,
         }
     }
+
+    pub fn get_action(&self) -> &str {
+        match self {
+            RebaseTodoLine::Comment { .. } => "comment",
+            RebaseTodoLine::Pick { .. } => "pick",
+            RebaseTodoLine::Edit { .. } => "edit",
+            RebaseTodoLine::Squash { .. } => "squash",
+            RebaseTodoLine::Fixup { .. } => "fixup",
+            RebaseTodoLine::Exec { .. } => "exec",
+            RebaseTodoLine::Drop { .. } => "drop",
+            RebaseTodoLine::Label { .. } => "label",
+            RebaseTodoLine::Reset { .. } => "reset",
+            RebaseTodoLine::Merge { .. } => "merge",
+            RebaseTodoLine::UpdateRef { .. } => "update-ref",
+            RebaseTodoLine::Reword { .. } => "reword",
+        }
+    }
 }
 
 impl Display for RebaseTodoLine {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let action = self.get_action();
         match self {
             RebaseTodoLine::Comment { message } => write!(f, "{}", message),
             RebaseTodoLine::Pick { commit, rest } => {
-                write!(f, "pick {} {}", commit, rest.join(" "))
+                write!(f, "{} {} {}", action, commit, rest.join(" "))
             }
             RebaseTodoLine::Edit { commit, rest } => {
-                write!(f, "edit {} {}", commit, rest.join(" "))
+                write!(f, "{} {} {}", action, commit, rest.join(" "))
             }
             RebaseTodoLine::Squash { commit, rest } => {
-                write!(f, "squash {} {}", commit, rest.join(" "))
+                write!(f, "{} {} {}", action, commit, rest.join(" "))
             }
             RebaseTodoLine::Fixup { commit, rest } => {
-                write!(f, "fixup {} {}", commit, rest.join(" "))
+                write!(f, "{} {} {}", action, commit, rest.join(" "))
             }
             RebaseTodoLine::Exec { command } => {
-                write!(f, "exec {}", command.join(" "))
+                write!(f, "{} {}", action, command.join(" "))
             }
             RebaseTodoLine::Drop { commit, rest } => {
-                write!(f, "drop {} {}", commit, rest.join(" "))
+                write!(f, "{} {} {}", action, commit, rest.join(" "))
             }
             RebaseTodoLine::Label { label, rest } => {
-                write!(f, "label {} {}", label, rest.join(" "))
+                write!(f, "{} {} {}", action, label, rest.join(" "))
             }
             RebaseTodoLine::Reset { label, rest } => {
-                write!(f, "reset {} {}", label, rest.join(" "))
+                write!(f, "{} {} {}", action, label, rest.join(" "))
             }
             RebaseTodoLine::Merge { commit, label } => {
                 if let Some(c) = commit {
-                    write!(f, "merge -c {} {}", c, label)
+                    write!(f, "{} -c {} {}", action, c, label)
                 } else {
-                    write!(f, "merge {}", label)
+                    write!(f, "{} {}", action, label)
                 }
             }
-            RebaseTodoLine::UpdateRef { refname } => write!(f, "update-ref {}", refname),
+            RebaseTodoLine::UpdateRef { refname } => write!(f, "{} {}", action, refname),
             RebaseTodoLine::Reword { commit, rest } => {
-                write!(f, "reword {} {}", commit, rest.join(" "))
+                write!(f, "{} {} {}", action, commit, rest.join(" "))
             }
         }
     }
