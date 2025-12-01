@@ -7,10 +7,13 @@ use ratatui::{
     crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers},
     layout::{Constraint, Layout, Rect},
     style::{Style, Stylize},
-    text::Line,
+    text::{Line, Span},
     widgets::{Block, Borders, Paragraph},
 };
-use std::path::{Path, PathBuf};
+use std::{
+    path::{Path, PathBuf},
+    str,
+};
 
 pub struct RebaseEditor {
     path: PathBuf,
@@ -180,7 +183,7 @@ impl RebaseEditor {
         frame.render_widget(paragraph, area);
     }
 
-    fn get_commit_diff(&self, commit: &git2::Commit) -> Option<String> {
+    fn get_commit_diff(&self, commit: &git2::Commit) -> Option<Vec<Line<'_>>> {
         let tree = commit.tree().ok()?;
         let parent = commit.parent(0).ok()?;
         let parent_tree = parent.tree().ok()?;
@@ -190,32 +193,47 @@ impl RebaseEditor {
             .diff_tree_to_tree(Some(&parent_tree), Some(&tree), None)
             .ok()?;
 
-        let mut diff_str = String::new();
+        let mut diffs = vec![];
         diff.print(git2::DiffFormat::Patch, |_, _, line| {
-            diff_str.push_str(std::str::from_utf8(line.content()).unwrap_or(""));
+            let style = match line.origin() {
+                '+' => Style::default().fg(ratatui::style::Color::Green),
+                '-' => Style::default().fg(ratatui::style::Color::Red),
+                _ => Style::default(),
+            };
+            diffs.push(Line::from(Span::styled(
+                str::from_utf8(line.content()).unwrap_or("").to_string(),
+                style,
+            )));
             true
         })
         .ok()?;
 
-        Some(diff_str)
+        Some(diffs)
     }
 
     pub fn format_commit(&self, commit: &git2::Commit) -> Paragraph<'_> {
         let timestamp = chrono::DateTime::from_timestamp(commit.time().seconds(), 0)
             .unwrap_or_else(|| chrono::DateTime::from_timestamp(0, 0).unwrap());
 
-        let diff = self.get_commit_diff(commit);
+        let diff = self.get_commit_diff(commit).unwrap_or_default();
 
-        let line = format!(
-            "Author: {} <{}>\nDate:   {}\n\n{}\n{}",
-            commit.author().name().unwrap_or("Unknown"),
-            commit.author().email().unwrap_or("unknown"),
-            timestamp,
-            commit.message().unwrap_or("No commit message"),
-            diff.unwrap_or_default()
+        let mut content = vec![];
+        content.push(
+            format!(
+                "Author: {} <{}>\n",
+                commit.author().name().unwrap_or("Unknown"),
+                commit.author().email().unwrap_or("unknown")
+            )
+            .into(),
         );
+        content.push(format!("Date:   {}\n\n", timestamp).into());
+        content.push("".into());
+        content.push(format!("{}\n\n", commit.message().unwrap_or("No commit message")).into());
+        content.push("".into());
 
-        Paragraph::new(line).style(Style::default())
+        content.extend(diff);
+
+        Paragraph::new(content).style(Style::default())
     }
 
     pub fn render_commit_info(&self, frame: &mut ratatui::Frame, area: Rect) {
