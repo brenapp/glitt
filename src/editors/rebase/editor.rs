@@ -17,7 +17,6 @@ pub struct RebaseEditor {
     path: PathBuf,
     line: usize,
     todo: RebaseTodo,
-    #[allow(dead_code)]
     repo: Repository,
 }
 
@@ -189,16 +188,39 @@ impl RebaseEditor {
         frame.render_widget(paragraph, area);
     }
 
+    fn get_commit_diff(&self, commit: &git2::Commit) -> Option<String> {
+        let tree = commit.tree().ok()?;
+        let parent = commit.parent(0).ok()?;
+        let parent_tree = parent.tree().ok()?;
+
+        let diff = self
+            .repo
+            .diff_tree_to_tree(Some(&parent_tree), Some(&tree), None)
+            .ok()?;
+
+        let mut diff_str = String::new();
+        diff.print(git2::DiffFormat::Patch, |_, _, line| {
+            diff_str.push_str(std::str::from_utf8(line.content()).unwrap_or(""));
+            true
+        })
+        .ok()?;
+
+        Some(diff_str)
+    }
+
     pub fn format_commit(&self, commit: &git2::Commit) -> Paragraph<'_> {
         let timestamp = chrono::DateTime::from_timestamp(commit.time().seconds(), 0)
             .unwrap_or_else(|| chrono::DateTime::from_timestamp(0, 0).unwrap());
 
+        let diff = self.get_commit_diff(commit);
+
         let line = format!(
-            "Author: {} <{}>\nDate:   {}\n\n{}\n",
+            "Author: {} <{}>\nDate:   {}\n\n{}\n{}",
             commit.author().name().unwrap_or("Unknown"),
             commit.author().email().unwrap_or("unknown"),
             timestamp,
             commit.message().unwrap_or("No commit message"),
+            diff.unwrap_or_default()
         );
 
         Paragraph::new(line).style(Style::default())
