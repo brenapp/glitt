@@ -8,7 +8,7 @@ use ratatui::{
     layout::{Constraint, Layout, Rect},
     style::{Style, Stylize},
     text::{Line, Span},
-    widgets::{Block, Borders, Paragraph},
+    widgets::{Block, Borders, List, ListItem, ListState, Paragraph},
 };
 use std::{
     path::{Path, PathBuf},
@@ -17,9 +17,9 @@ use std::{
 
 pub struct RebaseEditor {
     path: PathBuf,
-    line: usize,
     todo: RebaseTodo,
     repo: Repository,
+    list_state: ListState,
 }
 
 impl RebaseEditor {
@@ -27,7 +27,7 @@ impl RebaseEditor {
         let content = std::fs::read_to_string(&path)?;
         let todo = RebaseTodo::parse(&content);
 
-        let line = todo
+        let initial_line = todo
             .lines()
             .iter()
             .position(|line| !matches!(line, RebaseTodoLine::Comment { .. }))
@@ -38,12 +38,19 @@ impl RebaseEditor {
                 .ok_or_else(|| color_eyre::eyre::eyre!("Invalid path"))?,
         )?;
 
+        let mut list_state = ListState::default();
+        list_state.select(Some(initial_line));
+
         Ok(Self {
             path,
             todo,
-            line,
             repo,
+            list_state,
         })
+    }
+
+    fn selected(&self) -> usize {
+        self.list_state.selected().unwrap_or(0)
     }
 
     pub fn move_cursor_down(&mut self) {
@@ -53,11 +60,11 @@ impl RebaseEditor {
             return;
         }
 
-        let mut idx = self.line;
+        let mut idx = self.selected();
         for _ in 0..len {
             idx = (idx + 1) % len;
             if !matches!(lines[idx], RebaseTodoLine::Comment { .. }) {
-                self.line = idx;
+                self.list_state.select(Some(idx));
                 return;
             }
         }
@@ -70,7 +77,7 @@ impl RebaseEditor {
             return;
         }
 
-        let mut idx = self.line;
+        let mut idx = self.selected();
         for _ in 0..len {
             if idx == 0 {
                 idx = len - 1;
@@ -78,7 +85,7 @@ impl RebaseEditor {
                 idx -= 1;
             }
             if !matches!(lines[idx], RebaseTodoLine::Comment { .. }) {
-                self.line = idx;
+                self.list_state.select(Some(idx));
                 return;
             }
         }
@@ -91,13 +98,13 @@ impl RebaseEditor {
             return;
         }
 
-        let current_line = self.line;
+        let current_line = self.selected();
         let mut idx = current_line;
         for _ in 0..len {
             idx = (idx + 1) % len;
             if !matches!(lines[idx], RebaseTodoLine::Comment { .. }) {
                 self.todo.lines_mut().swap(current_line, idx);
-                self.line = idx;
+                self.list_state.select(Some(idx));
                 return;
             }
         }
@@ -110,7 +117,7 @@ impl RebaseEditor {
             return;
         }
 
-        let current_line = self.line;
+        let current_line = self.selected();
         let mut idx = current_line;
         for _ in 0..len {
             if idx == 0 {
@@ -120,18 +127,19 @@ impl RebaseEditor {
             }
             if !matches!(lines[idx], RebaseTodoLine::Comment { .. }) {
                 self.todo.lines_mut().swap(current_line, idx);
-                self.line = idx;
+                self.list_state.select(Some(idx));
                 return;
             }
         }
     }
 
     pub fn set_current_line(&mut self, line: RebaseTodoLine) {
-        self.todo.lines_mut()[self.line] = line;
+        let idx = self.selected();
+        self.todo.lines_mut()[idx] = line;
     }
 
     pub fn get_current_line(&self) -> Option<&RebaseTodoLine> {
-        self.todo.lines().get(self.line)
+        self.todo.lines().get(self.selected())
     }
 
     pub fn get_commit_for_line(&self, line: &RebaseTodoLine) -> Option<Commit<'_>> {
@@ -160,27 +168,28 @@ impl RebaseEditor {
         Ok(())
     }
 
-    pub fn render_todo_list(&self, frame: &mut ratatui::Frame, area: Rect) {
+    pub fn render_todo_list(&mut self, frame: &mut ratatui::Frame, area: Rect) {
         let block = Block::default().title("Todo").borders(Borders::ALL);
+        let selected = self.selected();
 
-        let lines: Vec<_> = self
+        let items: Vec<ListItem> = self
             .todo
             .lines()
             .iter()
             .enumerate()
             .map(|(i, line)| {
-                let style = if i == self.line {
+                let style = if i == selected {
                     line.get_selected_style()
                 } else {
                     line.get_style()
                 };
 
-                Line::from(line.to_string()).style(style)
+                ListItem::new(Line::from(line.to_string())).style(style)
             })
             .collect();
 
-        let paragraph = Paragraph::new(lines).block(block);
-        frame.render_widget(paragraph, area);
+        let list = List::new(items).block(block);
+        frame.render_stateful_widget(list, area, &mut self.list_state);
     }
 
     fn get_commit_diff(&self, commit: &git2::Commit) -> Option<Vec<Line<'_>>> {
