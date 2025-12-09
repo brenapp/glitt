@@ -7,16 +7,13 @@ use ratatui::{
     crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers},
     layout::{Constraint, Layout, Rect},
     style::{Color, Style, Stylize},
-    text::{Line, Span},
+    text::Line,
     widgets::{
         Block, Borders, List, ListItem, ListState, Paragraph, Scrollbar, ScrollbarOrientation,
         ScrollbarState,
     },
 };
-use std::{
-    path::{Path, PathBuf},
-    str,
-};
+use std::path::{Path, PathBuf};
 
 pub struct RebaseEditor {
     path: PathBuf,
@@ -219,10 +216,11 @@ impl RebaseEditor {
                 '-' => Style::default().fg(Color::Red),
                 _ => Style::default(),
             };
-            diffs.push(Line::from(Span::styled(
-                str::from_utf8(line.content()).unwrap_or("").to_string(),
-                style,
-            )));
+
+            let chunk = str::from_utf8(line.content()).unwrap_or_default();
+            for line in chunk.lines() {
+                diffs.push(Line::from(line.to_string()).style(style));
+            }
             true
         })
         .ok()?;
