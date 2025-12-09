@@ -6,9 +6,12 @@ use git2::{Commit, Repository};
 use ratatui::{
     crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers},
     layout::{Constraint, Layout, Rect},
-    style::{Style, Stylize},
+    style::{Color, Style, Stylize},
     text::{Line, Span},
-    widgets::{Block, Borders, List, ListItem, ListState, Paragraph},
+    widgets::{
+        Block, Borders, List, ListItem, ListState, Paragraph, Scrollbar, ScrollbarOrientation,
+        ScrollbarState,
+    },
 };
 use std::{
     path::{Path, PathBuf},
@@ -190,6 +193,13 @@ impl RebaseEditor {
 
         let list = List::new(items).block(block);
         frame.render_stateful_widget(list, area, &mut self.list_state);
+
+        let scrollbar = Scrollbar::default()
+            .orientation(ScrollbarOrientation::VerticalRight)
+            .style(Style::default().fg(Color::Gray));
+
+        let mut scroll_state = ScrollbarState::new(self.todo.lines().len()).position(selected);
+        frame.render_stateful_widget(scrollbar, area, &mut scroll_state);
     }
 
     fn get_commit_diff(&self, commit: &git2::Commit) -> Option<Vec<Line<'_>>> {
@@ -205,8 +215,8 @@ impl RebaseEditor {
         let mut diffs = vec![];
         diff.print(git2::DiffFormat::Patch, |_, _, line| {
             let style = match line.origin() {
-                '+' => Style::default().fg(ratatui::style::Color::Green),
-                '-' => Style::default().fg(ratatui::style::Color::Red),
+                '+' => Style::default().fg(Color::Green),
+                '-' => Style::default().fg(Color::Red),
                 _ => Style::default(),
             };
             diffs.push(Line::from(Span::styled(
