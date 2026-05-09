@@ -2,10 +2,11 @@ use crate::editors::{
     Editor,
     rebase::todo::{RebaseTodo, RebaseTodoLine},
 };
-use git2::{Commit, Repository};
+use chrono::DateTime;
+use git2::{Commit, DiffFormat, Repository};
 use ratatui::{
     crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers},
-    layout::{Constraint, Layout, Rect},
+    layout::{Alignment, Constraint, Layout, Rect},
     style::{Color, Style, Stylize},
     text::Line,
     widgets::{
@@ -199,6 +200,10 @@ impl RebaseEditor {
         frame.render_stateful_widget(scrollbar, area, &mut scroll_state);
     }
 
+    fn normalize_diff_line(line: &str) -> String {
+        line.replace('\t', "  ")
+    }
+
     fn get_commit_diff(&self, commit: &git2::Commit) -> Option<Vec<Line<'_>>> {
         let tree = commit.tree().ok()?;
         let parent = commit.parent(0).ok()?;
@@ -210,7 +215,7 @@ impl RebaseEditor {
             .ok()?;
 
         let mut diffs = vec![];
-        diff.print(git2::DiffFormat::Patch, |_, _, line| {
+        diff.print(DiffFormat::Patch, |_, _, line| {
             let style = match line.origin() {
                 '+' => Style::default().fg(Color::Green),
                 '-' => Style::default().fg(Color::Red),
@@ -219,7 +224,10 @@ impl RebaseEditor {
 
             let chunk = str::from_utf8(line.content()).unwrap_or_default();
             for line in chunk.lines() {
-                diffs.push(Line::from(line.to_string()).style(style));
+                let line = Line::from(Self::normalize_diff_line(line))
+                    .style(style)
+                    .alignment(Alignment::Left);
+                diffs.push(line);
             }
             true
         })
@@ -229,8 +237,8 @@ impl RebaseEditor {
     }
 
     pub fn format_commit(&self, commit: &git2::Commit) -> Paragraph<'_> {
-        let timestamp = chrono::DateTime::from_timestamp(commit.time().seconds(), 0)
-            .unwrap_or_else(|| chrono::DateTime::from_timestamp(0, 0).unwrap());
+        let timestamp = DateTime::from_timestamp(commit.time().seconds(), 0)
+            .unwrap_or_else(|| DateTime::from_timestamp(0, 0).unwrap());
 
         let diff = self.get_commit_diff(commit).unwrap_or_default();
 
