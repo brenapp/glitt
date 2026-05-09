@@ -1,6 +1,11 @@
 # Glitt
 
-`glitt` is a small editor for standard git workflows that makes it easier to use Git from the terminal. We currently provide an interactive rebase editor. When you configure glitt as your git editor, you can configure a fallback.
+`glitt` is a small editor for standard git workflows that makes it easier to use Git from the terminal. Instead of being a git TUI first, glitt aims to augment your existing CLI usage by providing dedicated editors for specific git operations to make them easier to complete from your terminal.
+
+
+## Supported Editors
+
+- Rebase Editor
 
 ## Install
 
